@@ -129,13 +129,21 @@ namespace OfficeOpenXml
             }
 
             //cellStyle
+            int count = 0;
             XmlNode namedStyleNode = GetNode(CellStylesPath);
             if (namedStyleNode != null)
             {
                 foreach (XmlNode n in namedStyleNode)
                 {
-                    ExcelNamedStyleXml item = new ExcelNamedStyleXml(_nameSpaceManager, n, this);
-                    NamedStyles.Add(item.Name, item);
+                    if (count++ < 50)
+                    {
+                        ExcelNamedStyleXml item = new ExcelNamedStyleXml(_nameSpaceManager, n, this);
+                        NamedStyles.Add(item.Name, item);
+                    }   
+                    else
+                    {
+
+                    }
                 }
             }
 
@@ -817,6 +825,11 @@ namespace OfficeOpenXml
             style.Style.SetIndex(ix);
             return style;
         }
+        /// <summary>
+        /// Creates a tables style only visible for pivot tables and with elements specific to pivot tables.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <returns>The table style object</returns>
         public ExcelPivotTableNamedStyle CreatePivotTableStyle(string name)
         {
             ValidateTableStyleName(name);
@@ -829,12 +842,24 @@ namespace OfficeOpenXml
             TableStyles.Add(name, s);
             return s;
         }
+        /// <summary>
+        /// Creates a tables style only visible for pivot tables and with elements specific to pivot tables.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The built-in table style to use as a template for this custom style</param>
+        /// <returns>The table style object</returns>
         public ExcelPivotTableNamedStyle CreatePivotTableStyle(string name, PivotTableStyles templateStyle)
         {
             var s = CreatePivotTableStyle(name);
             s.SetFromTemplate(templateStyle);
             return s;
         }
+        /// <summary>
+        /// Creates a tables style only visible for pivot tables and with elements specific to pivot tables.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The table style to use as a template for this custom style</param>
+        /// <returns>The table style object</returns>
         public ExcelPivotTableNamedStyle CreatePivotTableStyle(string name, ExcelTableNamedStyleBase templateStyle)
         {
             var s = CreatePivotTableStyle(name);
@@ -842,6 +867,11 @@ namespace OfficeOpenXml
             return s;
         }
 
+        /// <summary>
+        /// Creates a tables style only visible for tables and with elements specific to pivot tables.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <returns>The table style object</returns>
         public ExcelTableNamedStyle CreateTableStyle(string name)
         {
             ValidateTableStyleName(name);
@@ -854,12 +884,24 @@ namespace OfficeOpenXml
             TableStyles.Add(name, s);
             return s;
         }
+        /// <summary>
+        /// Creates a tables style only visible for tables and with elements specific to pivot tables.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The built-in table style to use as a template for this custom style</param>
+        /// <returns>The table style object</returns>
         public ExcelTableNamedStyle CreateTableStyle(string name, TableStyles templateStyle)
         {
             var s = CreateTableStyle(name);
             s.SetFromTemplate(templateStyle);
             return s;
         }
+        /// <summary>
+        /// Creates a tables style only visible for tables and with elements specific to pivot tables.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The table style to use as a template for this custom style</param>
+        /// <returns>The table style object</returns>
         public ExcelTableNamedStyle CreateTableStyle(string name, ExcelTableNamedStyleBase templateStyle)
         {
             var s = CreateTableStyle(name);
@@ -867,6 +909,11 @@ namespace OfficeOpenXml
             return s;
         }
 
+        /// <summary>
+        /// Creates a tables visible for tables and pivot tables and with elements for both.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <returns>The table style object</returns>
         public ExcelTableAndPivotTableNamedStyle CreateTableAndPivotTableStyle(string name)
         {
             ValidateTableStyleName(name);
@@ -878,19 +925,46 @@ namespace OfficeOpenXml
             TableStyles.Add(name, s);
             return s;
         }
+        /// <summary>
+        /// Creates a tables visible for tables and pivot tables and with elements for both.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The built-in table style to use as a template for this custom style</param>
+        /// <returns>The table style object</returns>
         public ExcelTableAndPivotTableNamedStyle CreateTableAndPivotTableStyle(string name, TableStyles templateStyle)
         {
+            if (templateStyle == Table.TableStyles.Custom)
+            {
+                throw new ArgumentException("Cant use template style Custom. To use a custom style, please use the ´PivotTableStyles´ overload of this method.", nameof(templateStyle));
+            }
+
             var s = CreateTableAndPivotTableStyle(name);
             s.SetFromTemplate(templateStyle);
             return s;
         }
-
+        /// <summary>
+        /// Creates a tables visible for tables and pivot tables and with elements for both.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The built-in pivot table style to use as a template for this custom style</param>
+        /// <returns>The table style object</returns>
         public ExcelTableAndPivotTableNamedStyle CreateTableAndPivotTableStyle(string name, PivotTableStyles templateStyle)
         {
+            if (templateStyle == PivotTableStyles.Custom)
+            {
+                throw new ArgumentException("Cant use template style Custom. To use a custom style, please use the ´ExcelTableNamedStyleBase´ overload of this method.", nameof(templateStyle));
+            }
+
             var s = CreateTableAndPivotTableStyle(name);
             s.SetFromTemplate(templateStyle);
             return s;
         }
+        /// <summary>
+        /// Creates a tables visible for tables and pivot tables and with elements for both.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The table style to use as a template for this custom style</param>
+        /// <returns>The table style object</returns>
         public ExcelTableAndPivotTableNamedStyle CreateTableAndPivotTableStyle(string name, ExcelTableNamedStyleBase templateStyle)
         {
             var s = CreateTableAndPivotTableStyle(name);
@@ -898,6 +972,11 @@ namespace OfficeOpenXml
             return s;
         }
 
+        /// <summary>
+        /// Creates a custom slicer style.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <returns>The slicer style object</returns>
         public ExcelSlicerNamedStyle CreateSlicerStyle(string name)
         {
             ValidateTableStyleName(name);
@@ -933,8 +1012,18 @@ namespace OfficeOpenXml
             SlicerStyles.Add(name, s);
             return s;
         }
+        /// <summary>
+        /// Creates a custom slicer style.
+        /// </summary>
+        /// <param name="name">The name of the style</param>
+        /// <param name="templateStyle">The slicer style to use as a template for this custom style</param>
+        /// <returns>The slicer style object</returns>
         public ExcelSlicerNamedStyle CreateSlicerStyle(string name, eSlicerStyle templateStyle)
         {
+            if(templateStyle==eSlicerStyle.Custom)
+            {
+                throw new ArgumentException("Cant use template style Custom. To use a custom style, please use the ´ExcelSlicerNamedStyle´ overload of this method.", nameof(templateStyle));
+            }
             var s = CreateSlicerStyle(name);
             s.SetFromTemplate(templateStyle);
             return s;
@@ -950,7 +1039,7 @@ namespace OfficeOpenXml
             }
             if(tableStyleNames.Contains(name) || TableStyles.ExistsKey(name) || SlicerStyles.ExistsKey(name))
             {
-                throw (new ArgumentException("Table style name is not unique", "name"));
+                throw (new ArgumentException($"Table style name is not unique : {name}", "name"));
             }
         }
 
@@ -995,7 +1084,7 @@ namespace OfficeOpenXml
             //Add pivot Table formatting.
             foreach (var ws in _wb.Worksheets)
             {
-                if (!(ws is ExcelChartsheet))
+                if (!(ws is ExcelChartsheet) && ws.HasLoadedPivotTables)
                 {
                     foreach (var pt in ws.PivotTables)
                     {
@@ -1105,11 +1194,13 @@ namespace OfficeOpenXml
             }
             XmlNode cellXfsNode = GetNode(CellXfsPath);
             cellXfsNode.RemoveAll();
-
+            int xfsCount = 0;
             if (NamedStyles.Count > 0 && normalIx >= 0)
             {
                 NamedStyles[normalIx].newID = 0;
                 AddNamedStyle(0, styleXfsNode, cellXfsNode, NamedStyles[normalIx]);
+                cellXfsNode.AppendChild(CellStyleXfs[0].CreateXmlNode(_styleXml.CreateElement("xf", ExcelPackage.schemaMain)));
+                xfsCount++;
             }
             foreach (ExcelNamedStyleXml style in NamedStyles)
             {
@@ -1133,8 +1224,8 @@ namespace OfficeOpenXml
                 if (xf.useCnt > 0 && !(normalIx >= 0 && NamedStyles[normalIx].StyleXfId == xfix))
                 {
                     cellXfsNode.AppendChild(xf.CreateXmlNode(_styleXml.CreateElement("xf", ExcelPackage.schemaMain)));
-                    xf.newID = count;
-                    count++;
+                    xf.newID = xfsCount;
+                    xfsCount++;
                 }
                 xfix++;
             }
@@ -1177,18 +1268,18 @@ namespace OfficeOpenXml
             styleXfs.newID = id;
             styleXfs.XfId = style.StyleXfId;
 
-            var ix = CellXfs.FindIndexById(styleXfs.Id);
-            if (ix < 0)
-            {
-                cellXfsNode.AppendChild(styleXfs.CreateXmlNode(_styleXml.CreateElement("xf", ExcelPackage.schemaMain)));
-            }
-            else
-            {
-                if(id<0) CellXfs[ix].XfId = id;
-                cellXfsNode.AppendChild(CellXfs[ix].CreateXmlNode(_styleXml.CreateElement("xf", ExcelPackage.schemaMain)));
-                CellXfs[ix].useCnt = 0;
-                CellXfs[ix].newID = id;
-            }
+            //var ix = CellXfs.FindIndexById(styleXfs.Id);
+            //if (ix < 0)
+            //{
+            //    cellXfsNode.AppendChild(styleXfs.CreateXmlNode(_styleXml.CreateElement("xf", ExcelPackage.schemaMain)));
+            //}
+            //else
+            //{
+            //    if (id < 0) CellXfs[ix].XfId = id;
+            //    cellXfsNode.AppendChild(CellXfs[ix].CreateXmlNode(_styleXml.CreateElement("xf", ExcelPackage.schemaMain)));
+            //    CellXfs[ix].useCnt = 0;
+            //    CellXfs[ix].newID = id;
+            //}
 
             if (style.XfId >= 0)
                 style.XfId = CellXfs[style.XfId].newID;
@@ -1461,17 +1552,39 @@ namespace OfficeOpenXml
                 return new ExcelDxfStyle(NameSpaceManager, null, this, callback);
             }
         }
-        internal ExcelDxfStyle GetDxfSlicer(int? dxfId)
+        internal ExcelDxfSlicerStyle GetDxfSlicer(int? dxfId, Action<eStyleClass, eStyleProperty, object> callback)
         {
-            if (dxfId.HasValue && dxfId < DxfsSlicers.Count)
+            if (dxfId.HasValue && dxfId < Dxfs.Count)
             {
-                return DxfsSlicers[dxfId.Value].ToDxfStyle();
+                return Dxfs[dxfId.Value].ToDxfSlicerStyle();
             }
             else
             {
-                return new ExcelDxfStyle(NameSpaceManager, null, this);
+                return new ExcelDxfSlicerStyle(NameSpaceManager, null, this, callback);
+            }
+        }
+        internal ExcelDxfTableStyle GetDxfTable(int? dxfId, Action<eStyleClass, eStyleProperty, object> callback)
+        {
+            if (dxfId.HasValue && dxfId < Dxfs.Count)
+            {
+                return Dxfs[dxfId.Value].ToDxfTableStyle();
+            }
+            else
+            {
+                return new ExcelDxfTableStyle(NameSpaceManager, null, this, callback);
             }
         }
 
+        internal ExcelDxfSlicerStyle GetDxfSlicer(int? dxfId)
+        {
+            if (dxfId.HasValue && dxfId < DxfsSlicers.Count)
+            {
+                return DxfsSlicers[dxfId.Value].ToDxfSlicerStyle();
+            }
+            else
+            {
+                return new ExcelDxfSlicerStyle(NameSpaceManager, null, this, null);
+            }
+        }
     }
 }

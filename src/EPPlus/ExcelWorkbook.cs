@@ -284,7 +284,7 @@ namespace OfficeOpenXml
 				_package.ZipPackage.DeletePart(SharedStringsUri); //Remove the part, it is recreated when saved.
 			}
 		}
-		internal void	GetDefinedNames()
+		internal void GetDefinedNames()
 		{
 			XmlNodeList nl = WorkbookXml.SelectNodes("//d:definedNames/d:definedName", NameSpaceManager);
 			if (nl != null)
@@ -1080,8 +1080,11 @@ namespace OfficeOpenXml
 
 			UpdateDefinedNamesXml();
 
-			//Updates the Workbook Xml, so must be before saving the wookbook part 
-			SavePivotTableCaches();
+			if (HasLoadedPivotTables)
+			{
+				//Updates the Workbook Xml, so must be before saving the wookbook part 
+				SavePivotTableCaches();
+			}
 
 			// save the workbook
 			if (_workbookXml != null)
@@ -1162,27 +1165,27 @@ namespace OfficeOpenXml
 					var r = cache.SourceRange;
 					if (r != null)              //Source does not exist
 					{
-						ExcelTable t = null;
-						if (r.IsName)
-						{
-							//Named range, set name
-							cache.SetSourceName(((ExcelNamedRange)r).Name);
-						}
-						else
-						{
-							var ws = Worksheets[r.WorkSheetName];
-							t = ws.Tables.GetFromRange(r);
-							if (t == null)
-							{
-								//Address
-								cache.SetSourceAddress(r.Address);
-							}
-							else
-							{
-								//Table, set name
-								cache.SetSourceName(t.Name);
-							}
-						}
+						ExcelTable t = r.Worksheet.Tables.GetFromRange(r); ;
+						//if (r.IsName)
+						//{
+						//	//Named range, set name
+						//	cache.SetSourceName(((ExcelNamedRange)r).Name);
+						//}
+						//else
+						//{
+						//	var ws = Worksheets[r.WorkSheetName];
+						//	t = ws.Tables.GetFromRange(r);
+						//	if (t == null)
+						//	{
+						//		//Address
+						//		cache.SetSourceAddress(r.Address);
+						//	}
+						//	else
+						//	{
+						//		//Table, set name
+						//		cache.SetSourceName(t.Name);
+						//	}
+						//}
 
 						var fields =
 							cache.CacheDefinitionXml.SelectNodes(
@@ -1489,16 +1492,25 @@ namespace OfficeOpenXml
 
 			if (cacheReference.CacheSource == eSourceType.Worksheet && cacheReference.SourceRange!=null)
 			{
-				var fullAddress = cacheReference.SourceRange.FullAddress;
-				if (_pivotTableCaches.TryGetValue(fullAddress, out PivotTableCacheRangeInfo cacheInfo))
+				string address;
+				if(string.IsNullOrEmpty(cacheReference.SourceName))
+                {
+					address = cacheReference.SourceRange.FullAddress;
+				}
+				else
+                {
+					address = cacheReference.SourceName;
+				}
+				
+				if (_pivotTableCaches.TryGetValue(address, out PivotTableCacheRangeInfo cacheInfo))
 				{
 					cacheInfo.PivotCaches.Add(cacheReference);
 				}
 				else
 				{
-					_pivotTableCaches.Add(fullAddress, new PivotTableCacheRangeInfo()
+					_pivotTableCaches.Add(address, new PivotTableCacheRangeInfo()
 					{
-						Address = fullAddress,
+						Address = address,
 						PivotCaches = new List<PivotTableCacheInternal>() { cacheReference }
 					});
 				}
@@ -1570,7 +1582,22 @@ namespace OfficeOpenXml
 			}
 		}
 
-		internal void ReadAllPivotTables()
+        public bool HasLoadedPivotTables 
+		{ 
+			get
+			{
+				if (_worksheets == null) return false;
+				foreach(var ws in _worksheets)
+                {
+					if(ws.HasLoadedPivotTables==true)
+                    {
+						return true;
+                    }
+                }
+				return false;
+			}
+		}
+        internal void ReadAllPivotTables()
 		{
 			if (_nextPivotTableID > 0) return;
 			_nextPivotTableID = 1;

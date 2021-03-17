@@ -9,38 +9,32 @@
   Date               Author                       Change
  *************************************************************************************************
   01/27/2020         EPPlus Software AB       Initial release EPPlus 5
+  02/26/2021         EPPlus Software AB       Modified to work with dxf styling for tables
  *************************************************************************************************/
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using OfficeOpenXml.FormulaParsing.Utilities;
-
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions
+using System.Xml;
+namespace OfficeOpenXml.Style.Dxf
 {
-    public class BoolArgumentParser : ArgumentParser
+    /// <summary>
+    /// Differential formatting record used in conditional formatting
+    /// </summary>
+    public class ExcelDxfSlicerStyle : ExcelDxfStyleFont
     {
-        public override object Parse(object obj)
+        internal ExcelDxfSlicerStyle(XmlNamespaceManager nameSpaceManager, XmlNode topNode, ExcelStyles styles, Action<eStyleClass, eStyleProperty, object> callback)
+            : base(nameSpaceManager, topNode, styles, callback)
         {
-            if (obj is ExcelDataProvider.IRangeInfo)
+        }
+        protected internal override DxfStyleBase Clone()
+        {
+            var s = new ExcelDxfSlicerStyle(_helper.NameSpaceManager, null, _styles, _callback)
             {
-                var r = ((ExcelDataProvider.IRangeInfo)obj).FirstOrDefault();
-                obj = (r == null ? null : r.Value);
-            }
-            if (obj == null) return false;
-            if (obj is bool) return (bool)obj;
-            if (obj.IsNumeric()) return Convert.ToBoolean(obj);
-            bool result;
-            if (bool.TryParse(obj.ToString(), out result))
-            {
-                return result;
-            }
-            return result;
+                Font = (ExcelDxfFont)Font.Clone(),
+                Fill = (ExcelDxfFill)Fill.Clone(),
+                Border = (ExcelDxfBorderBase)Border.Clone(),
+            };
+
+            return s;
         }
 
-        public override object Parse(object obj, RoundingMethod roundingMethod)
-        {
-            return Parse(obj);
-        }
     }
 }

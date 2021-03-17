@@ -197,6 +197,21 @@ namespace OfficeOpenXml.FormulaParsing.Excel.Functions
 
         /// <summary>
         /// Returns the value of the argument att the position of the 0-based
+        /// <paramref name="index"/> as an integer.
+        /// </summary>
+        /// <param name="arguments"></param>
+        /// <param name="index"></param>
+        /// <param name="roundingMethod"></param>
+        /// <returns>Value of the argument as an integer.</returns>
+        /// <exception cref="ExcelErrorValueException"></exception>
+        protected int ArgToInt(IEnumerable<FunctionArgument> arguments, int index, RoundingMethod roundingMethod)
+        {
+            var val = arguments.ElementAt(index).ValueFirst;
+            return (int)_argumentParsers.GetParser(DataType.Integer).Parse(val, roundingMethod);
+        }
+
+        /// <summary>
+        /// Returns the value of the argument att the position of the 0-based
         /// <paramref name="index"/> as a string.
         /// </summary>
         /// <param name="arguments"></param>
@@ -467,15 +482,20 @@ namespace OfficeOpenXml.FormulaParsing.Excel.Functions
         protected virtual IEnumerable<double> ArgsToDoubleEnumerableZeroPadded(bool ignoreHiddenCells, ExcelDataProvider.IRangeInfo rangeInfo, ParsingContext context)
         {
             var startRow = rangeInfo.Address.Start.Row;
-            var endRow = rangeInfo.Address.End.Row > rangeInfo.Worksheet.Dimension.Rows ? rangeInfo.Worksheet.Dimension.Rows : rangeInfo.Address.End.Row;
+            var endRow = rangeInfo.Address.End.Row > rangeInfo.Worksheet.Dimension._toRow ? rangeInfo.Worksheet.Dimension._toRow : rangeInfo.Address.End.Row;
+            var startCol = rangeInfo.Address.Start.Column;
+            var endCol = rangeInfo.Address.End.Column > rangeInfo.Worksheet.Dimension._toCol ? rangeInfo.Worksheet.Dimension._toCol : rangeInfo.Address.End.Column;
+            var horizontal = (startRow == endRow && rangeInfo.Address._fromCol < rangeInfo.Address._toCol);
             var funcArg = new FunctionArgument(rangeInfo);
             var result = ArgsToDoubleEnumerable(ignoreHiddenCells, new List<FunctionArgument> { funcArg }, context);
             var dict = new Dictionary<int, double>();
-            result.ToList().ForEach(x => dict.Add(x.CellRow.Value, x.Value));
+            result.ToList().ForEach(x => dict.Add(horizontal ? x.CellCol.Value : x.CellRow.Value, x.Value));
             var resultList = new List<double>();
-            for (var row = startRow; row <= endRow; row++)
+            var from = horizontal ? startCol : startRow;
+            var to = horizontal ? endCol : endRow;
+            for (var row = from; row <= to; row++)
             {
-                if(dict.ContainsKey(row))
+                if (dict.ContainsKey(row))
                 {
                     resultList.Add(dict[row]);
                 }

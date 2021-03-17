@@ -1927,9 +1927,42 @@ namespace EPPlusTest
             using (var p = OpenTemplatePackage("CommentDelete.xlsx"))
             {
                 var ws = p.Workbook.Worksheets["S3"];
+                ws.Comments[0].RichText.Add("T");
+                ws.Comments[0].RichText.Add("x");
+                var ws2 = p.Workbook.Worksheets.Add("Copied S3", ws);
+                ws.InsertRow(2,1);
                 ws.DeleteRow(2);
-                ws.DeleteRow(2);
+                ws2.DeleteRow(2);
+                ws.InsertRow(2, 2);
+                var c = ws2.Comments;   // Access the comment collection to force loading it. Otherwise Exception!
+                int dummy = c.Count;    // to load!
+                p.Workbook.Worksheets.Delete(ws);
+                p.Workbook.Worksheets.Delete(ws2);
                 SaveAndCleanup(p);
+            }
+        }
+        [TestMethod]
+        public void DeleteWorksheetIssue()
+        {
+            using (var p = OpenTemplatePackage("CommentDelete.xlsx"))
+            {
+                var ws = p.Workbook.Worksheets["S3"];
+                var c = ws.Comments; // Access the comment collection to force loading it. Otherwise Exception!
+                int dummy = c.Count; // to load!
+                //ws.DeleteRow(2);
+                dummy = c.Count; // to load!
+                p.Workbook.Worksheets.Delete(ws);
+                SaveAndCleanup(p);
+            }
+        }
+        [TestMethod]
+        public void Issue294()
+        {
+            using (var p = OpenTemplatePackage("test_excel_workbook_before2-xl.xlsx"))
+            {
+                var s = p.Workbook.Styles.NamedStyles.Count;
+                var ws = p.Workbook.Worksheets["Summary"];
+                p.Save();
             }
         }
     }

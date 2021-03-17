@@ -2014,7 +2014,7 @@ namespace OfficeOpenXml
             if (clearHyperLinksComments)
             {
                 _worksheet._hyperLinks.Delete(fromRow, fromCol, rows, cols, shift);
-                _worksheet._commentsStore.Delete(fromRow, fromCol, rows, cols, shift);
+                DeleteComments(Range);
             }
 
             //Clear multi addresses as well
@@ -2024,6 +2024,20 @@ namespace OfficeOpenXml
                 {
                     DeleteMe(sub, shift, clearValues, clearFlagsAndformulas, clearMergedCells, clearHyperLinksComments);
                 }
+            }
+        }
+
+        private void DeleteComments(ExcelAddressBase Range)
+        {
+            var deleted=new List<int>();
+            var cse = new CellStoreEnumerator<int>(_worksheet._commentsStore, Range._fromRow, Range._fromCol, Range._toRow, Range._toCol);
+            while (cse.Next())
+            {
+                deleted.Add(cse.Value);
+            }
+            foreach(var i in deleted)
+            {
+                _worksheet.Comments.Remove(_worksheet.Comments._list[i]);
             }
         }
 
@@ -2086,6 +2100,10 @@ namespace OfficeOpenXml
         {
             get
             {
+                if (cellEnum == null)
+                {
+                    return null;
+                }
                 return new ExcelRangeBase(_worksheet, ExcelAddressBase.GetAddress(cellEnum.Row, cellEnum.Column));
             }
         }
@@ -2097,6 +2115,10 @@ namespace OfficeOpenXml
         {
             get
             {
+                if(cellEnum==null)
+                {
+                    return null;
+                }
                 return ((object)(new ExcelRangeBase(_worksheet, ExcelAddressBase.GetAddress(cellEnum.Row, cellEnum.Column))));
             }
         }
@@ -2110,6 +2132,11 @@ namespace OfficeOpenXml
         /// <returns></returns>
         public bool MoveNext()
         {
+            if (cellEnum == null)
+            {
+                Reset();
+            }
+
             if (cellEnum.Next())
             {
                 return true;
@@ -2342,5 +2369,49 @@ namespace OfficeOpenXml
             var v = (ExcelValue)value;
             list[index] = new ExcelValue { _value = v._value, _styleId = v._styleId };
         }
+        /// <summary>
+        /// If the range is a name or a table, return the name.
+        /// </summary>
+        /// <returns></returns>
+        internal string GetName()
+        {
+            if (this is ExcelNamedRange n)
+            {
+                return n.Name;
+            }
+            else
+            {
+                var t = Worksheet.Tables.GetFromRange(this);
+                if (t != null)
+                {
+                    return t.Name;
+                }
+            }
+            return null;
+        }
+        ///// <summary>
+        ///// The address for the range
+        ///// </summary>
+        ///// <remarks>Examples of addresses are "A1" "B1:C2" "A:A" "1:1" "A1:E2,G3:G5" </remarks>
+        //public new string Address
+        //{
+        //    get
+        //    {
+        //        return base.Address;
+        //    }
+        //    set
+        //    {
+        //        base.Address = value;
+        //        if (!string.IsNullOrEmpty(_ws) && !_ws.Equals(Worksheet.Name, StringComparison.InvariantCultureIgnoreCase))
+        //        {
+        //            _worksheet = _workbook.Worksheets[_ws];
+        //            if(_worksheet==null)
+        //            {
+        //                throw (new InvalidOperationException($"Worksheet {_ws} does not exist in this workbook"));
+        //            }
+        //        }
+        //    }
+        //}
+
     }
 }

@@ -65,10 +65,18 @@ namespace OfficeOpenXml
                 }
                 else
                 {
+                    if(Address.IndexOfAny(new char[] { '\'', '[', '!' })>=0)
+                    {
+                        var a = new ExcelAddress(Address);
+                        if(a.WorkSheetName!=null && a.WorkSheetName.Equals(_worksheet.Name, StringComparison.InvariantCultureIgnoreCase)==false)
+                        {
+                            throw new InvalidOperationException($"The worksheet address {Address} is not within the worksheet {_worksheet.Name}");
+                        }
+                    }
                     SetAddress(Address, _workbook, _worksheet.Name);
                     ChangeAddress();
                 }
-                if((_fromRow < 1 || _fromCol < 1) && Address.Equals("#REF!", StringComparison.InvariantCulture)==false)
+                if((_fromRow < 1 || _fromCol < 1) && Address.Equals("#REF!", StringComparison.InvariantCultureIgnoreCase)==false)
                 {
                     throw (new InvalidOperationException("Address is not valid."));
                 }

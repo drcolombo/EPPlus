@@ -222,15 +222,17 @@ namespace OfficeOpenXml.Style.Dxf
             SetValueBool(helper, path + "/d:outline/@val", Outline);
             SetValueBool(helper, path + "/d:shadow/@val", Shadow);
             SetValue(helper, path + "/d:name/@val", Name);
-            SetValue(helper, path + "/d:size/@val", Size);
+            SetValue(helper, path + "/d:sz/@val", Size);
             SetValue(helper, path + "/d:family/@val", Family);
             SetValue(helper, path + "/d:vertAlign/@val", VerticalAlign==ExcelVerticalAlignmentFont.None ? null : VerticalAlign.ToEnumString());
         }
-        internal new void GetValuesFromXml(XmlHelperInstance helper)
+        protected internal override void SetValuesFromXml(XmlHelper helper)
         {
-            base.GetValuesFromXml(helper);
-            Name = helper.GetXmlNodeString("d:font/d:name/@val");
             Size = helper.GetXmlNodeIntNull("d:font/d:sz/@val");
+
+            base.SetValuesFromXml(helper);
+
+            Name = helper.GetXmlNodeString("d:font/d:name/@val");
             Condense = helper.GetXmlNodeBoolNullable("d:font/d:condense/@val");
             Extend = helper.GetXmlNodeBoolNullable("d:font/d:extend/@val");
             Outline = helper.GetXmlNodeBoolNullable("d:font/d:outline/@val");

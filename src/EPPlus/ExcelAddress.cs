@@ -300,7 +300,6 @@ namespace OfficeOpenXml
             return c == ExcelAddressBase.eAddressCollition.Equal ||
                    c == ExcelAddressBase.eAddressCollition.Inside;
         }
-
         /// <summary>
         /// Address is an defined name
         /// </summary>
@@ -326,7 +325,9 @@ namespace OfficeOpenXml
         /// <summary>
         /// Sets the address
         /// </summary>
-        /// <param name="address">the address</param>
+        /// <param name="address">The address</param>
+        /// <param name="wb"></param>
+        /// <param name="wsName"></param>
         protected internal void SetAddress(string address, ExcelWorkbook wb, string wsName)
         {
             address = address.Trim();
@@ -1319,7 +1320,7 @@ namespace OfficeOpenXml
         { 
             get
             {
-                var ix = _address.LastIndexOf('!');
+                var ix = _address.TrimEnd().LastIndexOf('!', _address.Length - 2);  //Last index can be ! if address is #REF!, so check from 
                 if (ix>=0)
                 {
                     return _address.Substring(ix + 1);
@@ -1666,6 +1667,7 @@ namespace OfficeOpenXml
         /// Creates an Address object
         /// </summary>
         /// <param name="address">The formula address</param>
+        /// <param name="worksheet">The worksheet</param>
         public ExcelFormulaAddress(string address, ExcelWorksheet worksheet)
             : base(address, worksheet?.Workbook, worksheet?.Name)
         {

@@ -110,7 +110,25 @@ namespace OfficeOpenXml
                     if (token.TokenTypeIsSet(TokenType.ExcelAddress))
                     {
                         var a = new ExcelFormulaAddress(token.Value, (ExcelWorksheet)null);
-                        f += a.GetOffset(row - StartRow, column - StartCol, true);                            
+                        if (a.IsFullColumn)
+                        {
+                            if (a.IsFullRow)
+                            {
+                                f += token.Value;
+                            }
+                            else    
+                            {
+                                f += a.GetOffset(0, column - StartCol, true);
+                            }
+                        }
+                        else if (a.IsFullRow)
+                        {
+                            f += a.GetOffset(row - StartRow, 0, true);
+                        }
+                        else
+                        {
+                            f += a.GetOffset(row - StartRow, column - StartCol, true);
+                        }
                     }
                     else
                     {
@@ -357,11 +375,6 @@ namespace OfficeOpenXml
                 _list = _list.Where(x => x != null).ToList();
             }
         }
-        internal struct metaDataReferences
-        {
-            int cm;
-            int vm;
-        }
         internal CellStoreValue _values;
         internal CellStore<object> _formulas;
         internal FlagCellStore _flags;
@@ -411,6 +424,7 @@ namespace OfficeOpenXml
             _name = sheetName;
             _sheetID = sheetID;
             _positionId = positionID;
+
             if (hide.HasValue)
             {
                 Hidden = hide.Value;
@@ -428,7 +442,18 @@ namespace OfficeOpenXml
             _names = new ExcelNamedRangeCollection(Workbook, this);
 
             CreateXml();
-            TopNode = _worksheetXml.DocumentElement;            
+            TopNode = _worksheetXml.DocumentElement;
+            LoadComments();
+            LoadThreadedComments();
+        }
+        internal void LoadComments()
+        {
+            CreateVmlCollection();
+            _comments = new ExcelCommentCollection(_package, this, NameSpaceManager);
+        }
+        internal void LoadThreadedComments()
+        {
+            _threadedComments = new ExcelWorksheetThreadedComments(Workbook.ThreadedCommentPersons, this);
         }
 
         #endregion
@@ -952,11 +977,6 @@ namespace OfficeOpenXml
             get
             {
                 CheckSheetType();
-                if (_comments == null)
-                {
-                    CreateVmlCollection();
-                    _comments = new ExcelCommentCollection(_package, this, NameSpaceManager);
-                }
                 return _comments;
             }
         }
@@ -968,10 +988,6 @@ namespace OfficeOpenXml
             get
             {
                 CheckSheetType();
-                if(_threadedComments == null)
-                {
-                    _threadedComments = new ExcelWorksheetThreadedComments(Workbook.ThreadedCommentPersons, this);
-                }
                 return _threadedComments;
             }
         }
@@ -1207,12 +1223,11 @@ namespace OfficeOpenXml
                     if (sr.Peek() != -1)        //Now find the end tag </sheetdata> so we can add the end of the xml document
                     {
                         /**** Fixes issue 14788. Fix by Philip Garrett ****/
-                        long endSeekStart = end;
 
-                        while (endSeekStart >= 0)
+                        long endSeekStart = Math.Max(end - BLOCKSIZE, 0);
+                        while (endSeekStart < stream.Length)
                         {
-                            endSeekStart = Math.Max(endSeekStart - BLOCKSIZE, 0);
-                            int size = (int)(end - endSeekStart);
+                            int size = stream.Length - endSeekStart < BLOCKSIZE ? (int)(stream.Length - endSeekStart) : BLOCKSIZE;
                             stream.Seek(endSeekStart, SeekOrigin.Begin);
                             block = new char[size];
                             sr = new StreamReader(stream);
@@ -1225,6 +1240,7 @@ namespace OfficeOpenXml
                             {
                                 break;
                             }
+                            endSeekStart += size;
                         }
                     }
                     endMatch = Regex.Match(s, string.Format("(</[^>]*{0}[^>]*>)", "sheetData"));
@@ -1465,9 +1481,10 @@ namespace OfficeOpenXml
 
             while (!xr.EOF)
             {
-                while (xr.NodeType == XmlNodeType.EndElement)
+                while (xr.NodeType == XmlNodeType.EndElement || xr.NodeType == XmlNodeType.None)
                 {
                     xr.Read();
+                    if (xr.EOF) return;
                     continue;
                 }
                 if (xr.LocalName == "row")
@@ -1556,7 +1573,7 @@ namespace OfficeOpenXml
                 else if (xr.LocalName == "f")
                 {
                     string t = xr.GetAttribute("t");
-                    if (t == null)
+                    if (t == null || t=="normal")
                     {
                         _formulas.SetValue(address._fromRow, address._fromCol, ConvertUtil.ExcelDecodeString(xr.ReadElementContentAsString()));
                         SetValueInner(address._fromRow, address._fromCol, null);
@@ -1592,6 +1609,11 @@ namespace OfficeOpenXml
                         SetValueInner(address._fromRow, address._fromCol, null);
                         _sharedFormulas.Add(afIndex, new Formulas(SourceCodeTokenizer.Default) { Index = afIndex, Formula = formula, Address = aAddress, StartRow = address._fromRow, StartCol = address._fromCol, IsArray = true });
                         _flags.SetFlagValue(address._fromRow, address._fromCol, true, CellFlags.ArrayFormula);
+                    }
+                    else if (t=="dataTable") //Unsupported
+                    {
+                        //TODO:Add support.
+                        xr.Read();
                     }
                     else // ??? some other type
                     {
@@ -2345,7 +2367,7 @@ namespace OfficeOpenXml
                     SaveThreadedComments();
                     HeaderFooter.SaveHeaderFooterImages();
                     SaveTables();
-                    SavePivotTables();
+                    if(HasLoadedPivotTables) SavePivotTables();
                     SaveSlicers();
                 }
             }
@@ -2636,6 +2658,7 @@ namespace OfficeOpenXml
                             else
                             {
                                 col.Name = n;
+                                SetValueInner(tbl.Address._fromRow, colNum, ConvertUtil.ExcelDecodeString(col.Name));
                             }
                         }
                         else
@@ -3540,6 +3563,13 @@ namespace OfficeOpenXml
                     if (Workbook._nextPivotTableID == int.MinValue) Workbook.ReadAllPivotTables();
                 }
                 return _pivotTables;
+            }
+        }
+        internal bool HasLoadedPivotTables
+        { 
+            get
+            {
+                return _pivotTables != null;
             }
         }
         private ExcelConditionalFormattingCollection _conditionalFormatting = null;

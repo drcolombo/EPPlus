@@ -8,19 +8,25 @@
  *************************************************************************************************
   Date               Author                       Change
  *************************************************************************************************
-  01/27/2020         EPPlus Software AB       Initial release EPPlus 5
+  12/28/2020         EPPlus Software AB       EPPlus 5.6
  *************************************************************************************************/
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace OfficeOpenXml.FormulaParsing.Excel.Functions
+using System.Xml;
+namespace OfficeOpenXml.Style.Dxf
 {
-    public abstract class ArgumentParser
+    /// <summary>
+    /// Differential formatting record used for table styles
+    /// </summary>
+    public class ExcelDxfTableStyle : ExcelDxfStyleLimitedFont
     {
-        public abstract object Parse(object obj);
+        internal ExcelDxfTableStyle(XmlNamespaceManager nameSpaceManager, XmlNode topNode, ExcelStyles styles) 
+            : this(nameSpaceManager,topNode, styles, null)
+        {
+        }
+        internal ExcelDxfTableStyle(XmlNamespaceManager nameSpaceManager, XmlNode topNode, ExcelStyles styles, Action<eStyleClass, eStyleProperty, object> callback)
+            : base(nameSpaceManager, topNode, styles, callback)
+        {
 
-        public abstract object Parse(object obj, RoundingMethod roundingMethod);
+        }
     }
 }
